@@ -16,7 +16,8 @@
 - เทสต์ทั้งหมด: `python tests/run.py` · เฉพาะไฟล์: `python tests/run.py test_scan` · เฉพาะข้อ: `python tests/run.py test_scan.test_skip_rules`
 - เปิดโปรแกรม: `run.bat` หรือ `python app.pyw`
 - สร้างความจำใหม่: `python tools/seed_memory.py --force`
-- คำสั่ง Claude Code: `/next` ทำงานถัดไปในแผน · `/test` รันเทสต์ · `/new-feature <สิ่งที่อยากเพิ่ม>` ออกแบบฟีเจอร์ใหม่
+- เช็คว่าคำแปลของม็อดเดิมยังอยู่ครบ: `python -m gt.compare <ม็อดต้นฉบับ.pak> <โฟลเดอร์เกม>`
+- คำสั่ง Claude Code: `/next` ทำงานถัดไปในแผน · `/test` รันเทสต์ · `/check-mod` เช็คคำแปลม็อดเดิม · `/new-feature <สิ่งที่อยากเพิ่ม>` ออกแบบฟีเจอร์ใหม่
 
 ## กฎ
 - Python 3.12 + `anthropic` เท่านั้น ไม่เพิ่ม dependency อื่น

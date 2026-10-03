@@ -15,6 +15,12 @@
       "problemMatcher": []
     },
     {
+      "label": "เช็คคำแปลม็อดเดิม (Maneater)",
+      "type": "shell",
+      "command": "python -m gt.compare \"C:\\Users\\watch\\Downloads\\Mod Thai Maneater V.1.0.1-6-1-0-1-1658761829 (1)\\Mod Thai Maneater\\Maneater\\Content\\Paks\\Maneater-WindowsNoEditor_Mod_Thai_P.pak\" \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Maneater\"",
+      "problemMatcher": []
+    },
+    {
       "label": "สร้างความจำเริ่มต้นใหม่",
       "type": "shell",
       "command": "python tools/seed_memory.py --force",
