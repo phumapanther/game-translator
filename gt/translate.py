@@ -246,6 +246,20 @@ class Translator:
         return json.loads(text), 'ok'
 
     def _save(self, res):
-        with self._lock, open(self.work_dir / 'done.jsonl', 'a', encoding='utf-8') as f:
-            for n, r in res.items():
-                f.write(json.dumps({'n': n, 'th': r['th'], 'type': r['type'], 'en': r['en']}, ensure_ascii=False) + '\n')
+        with self._lock:
+            append_done(self.work_dir, res)
+
+
+def append_done(work_dir, results):
+    """results: {n: {'th','type','en'}} -> appended to work_dir/done.jsonl (shared by the app and gt.cc)."""
+    with open(Path(work_dir) / 'done.jsonl', 'a', encoding='utf-8') as f:
+        for n, r in results.items():
+            f.write(json.dumps({'n': n, 'th': r['th'], 'type': r['type'], 'en': r['en']}, ensure_ascii=False) + '\n')
+
+
+def remember(memory, scan, results, model):
+    """Feed validated results into the translation memory and (short strings) the game glossary."""
+    by_n = {line.n: line for line in scan.lines}
+    pairs = [(by_n[n].en, r['th']) for n, r in results.items() if n in by_n and r['th'] != by_n[n].en]
+    memory.tm_add([p for p in pairs if memory.tm_get(p[0]) != p[1]], scan.game_id, model)
+    memory.add_terms(scan.game_id, [{'en': en, 'th': th} for en, th in pairs if len(en) <= 40])

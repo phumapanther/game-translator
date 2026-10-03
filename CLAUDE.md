@@ -17,7 +17,8 @@
 - เปิดโปรแกรม: `run.bat` หรือ `python app.pyw`
 - สร้างความจำใหม่: `python tools/seed_memory.py --force`
 - เช็คว่าคำแปลของม็อดเดิมยังอยู่ครบ: `python -m gt.compare <ม็อดต้นฉบับ.pak> <โฟลเดอร์เกม>`
-- คำสั่ง Claude Code: `/next` ทำงานถัดไปในแผน · `/test` รันเทสต์ · `/check-mod` เช็คคำแปลม็อดเดิม · `/new-feature <สิ่งที่อยากเพิ่ม>` ออกแบบฟีเจอร์ใหม่
+- แปลผ่าน Claude Code (ไม่ใช้ API key): `python -m gt.cc prepare|check|apply|install|teach|lesson ...` — ขับด้วยคำสั่ง `/translate-game`
+- คำสั่ง Claude Code: `/translate-game <path เกม หรือชื่อใน Steam>` แปล+ติดตั้งครบวงจร · `/next` ทำงานถัดไปในแผน · `/test` รันเทสต์ · `/check-mod` เช็คคำแปลม็อดเดิม · `/new-feature <สิ่งที่อยากเพิ่ม>` ออกแบบฟีเจอร์ใหม่
 
 ## กฎ
 - Python 3.12 + `anthropic` เท่านั้น ไม่เพิ่ม dependency อื่น

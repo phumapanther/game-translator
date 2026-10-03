@@ -13,7 +13,7 @@ from gt.install import InstallError, install
 from gt.memory import Memory
 from gt.scan import NeedLocres, ScanError, scan
 from gt.steam import installed_games, steam_root
-from gt.translate import MODELS, TranslateError, Translator, estimate_usd, load_done, split_tm
+from gt.translate import MODELS, TranslateError, Translator, estimate_usd, load_done, remember, split_tm
 
 ROOT = Path(__file__).resolve().parent
 SETTINGS = ROOT / 'settings.json'
@@ -232,10 +232,7 @@ class App:
         self._bg(work)
 
     def _finish(self, s, model, res, hits):
-        by_n = {line.n: line for line in s.lines}
-        pairs = [(by_n[n].en, r['th']) for n, r in res.items() if r['th'] != by_n[n].en]
-        self.memory.tm_add([p for p in pairs if self.memory.tm_get(p[0]) != p[1]], s.game_id, model)
-        self.memory.add_terms(s.game_id, [{'en': en, 'th': th} for en, th in pairs if len(en) <= 40])
+        remember(self.memory, s, res, model)
         self.lines = build_lines(s, res, hits)
         self.log(f'บันทึกหนังสือ: {save_book(ROOT / "books", s, self.lines, model)}')
 
