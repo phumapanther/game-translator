@@ -6,6 +6,11 @@ from pathlib import Path
 
 import anthropic
 
+try:  # the transport anthropic is built on (ships with it): a connection drop mid-stream surfaces as its error
+    import httpx2 as httpx
+except ImportError:
+    import httpx
+
 from gt.validate import is_ok, problems
 
 MODELS = {  # id: (Thai label, $/1M input, output, cache read, cache write)
@@ -116,9 +121,10 @@ class Translator:
     def run(self, items, stop=None, progress=None):
         """items: [{'id': n, 'en': str}]. stop: threading.Event. progress(finished, total, cost_usd)."""
         stop = stop or threading.Event()
-        done = self.done()
-        # a saved row only counts if its English still matches (the game may have been updated since)
-        todo = [it for it in items if it['id'] not in done or done[it['id']]['en'] not in (None, it['en'])]
+        want = {it['id']: it['en'] for it in items}
+        # a saved row only counts for a current line whose English still matches (the game may have been updated)
+        done = {n: r for n, r in self.done().items() if n in want and r['en'] in (None, want[n])}
+        todo = [it for it in items if it['id'] not in done]
         total, finished = len(items), len(items) - len(todo)
         system = self.memory.system_prompt(self.game_id, self.game_name)
         glossary = self.memory.glossary(self.game_id)
@@ -228,7 +234,7 @@ class Translator:
             raise TranslateError(f'ไม่พบรุ่น {self.model}')
         except anthropic.RateLimitError:
             raise TranslateError('ถูกจำกัดความถี่การเรียก (rate limit) — รอสักครู่แล้วกดแปลต่อ งานที่เสร็จแล้วถูกบันทึกไว้')
-        except anthropic.APIConnectionError:
+        except (anthropic.APIConnectionError, httpx.TransportError):
             raise TranslateError('ต่ออินเทอร์เน็ตไม่ได้ — งานที่เสร็จแล้วถูกบันทึกไว้ กดแปลต่อได้')
         except anthropic.APIStatusError as e:
             raise TranslateError(f'Claude API ผิดพลาด ({e.status_code}) — กดแปลต่อได้ งานที่เสร็จแล้วถูกบันทึกไว้')

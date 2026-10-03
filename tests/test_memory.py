@@ -24,6 +24,24 @@ def test_tm_persists_and_reloads():
     assert Memory(root).tm_get('Back') == 'กลับ'
 
 
+def test_truncated_tm_file_is_tolerated():
+    root = tmp_path('m6')
+    Memory(root).tm_add([('Back', 'กลับ')], 'g', 'claude-opus-5-5')
+    with open(root / 'tm.jsonl', 'a', encoding='utf-8') as f:
+        f.write('{"en": "Quit", "th": "ออ')  # the app was closed mid-write
+    assert Memory(root).tm_get('Back') == 'กลับ'
+
+
+def test_failed_glossary_write_keeps_the_old_file():
+    m = Memory(tmp_path('m7'))
+    m.add_terms('g', [{'en': 'Grotto', 'th': 'ถ้ำ'}])
+    try:
+        m.add_terms('g', [{'en': 'Bad', 'th': '\ud800'}])  # not encodable: the write dies half way, like a closed app
+    except UnicodeEncodeError:
+        pass
+    assert m.glossary('g')[0]['th'] == 'ถ้ำ'
+
+
 def test_system_prompt_keeps_curated_terms_when_glossary_is_capped():
     m = Memory(tmp_path('m5'))
     m.add_terms('g', [{'en': f'Auto term {i:04d}', 'th': 'อัตโนมัติ'} for i in range(1600)])

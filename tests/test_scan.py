@@ -40,6 +40,7 @@ def test_encrypted_base_pak_still_allows_manual_locres():
     manual.write_bytes(_small_locres())
     s = scan(game, manual_locres=manual)
     assert s.mode == 'manual' and len(s.lines) == 1 and any('AES' in n for n in s.notes)
+    assert s.fonts == [] and any('ฟอนต์' in n for n in s.notes)  # Thai would show as boxes: say so
 
 
 def test_engine_detection():

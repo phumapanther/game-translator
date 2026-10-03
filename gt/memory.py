@@ -1,5 +1,6 @@
 """Translator memory on disk: style rules, lessons, per-game glossary, translation memory (TM)."""
 import json
+import os
 import re
 import threading
 from datetime import date
@@ -19,9 +20,11 @@ class Memory:
         tm = self.root / 'tm.jsonl'
         if tm.exists():
             for line in tm.read_text(encoding='utf-8').splitlines():
-                if line.strip():
+                try:
                     row = json.loads(line)
-                    self._tm[row['en']] = row['th']  # later rows win
+                except ValueError:  # blank, or half-written when the app was closed mid-write
+                    continue
+                self._tm[row['en']] = row['th']  # later rows win
 
     # --- style rules & lessons (markdown files) -------------------------
     def text(self, name):
@@ -51,8 +54,10 @@ class Memory:
                                 'note': t.get('note', ''), 'dnt': bool(t.get('dnt', False))}
                 changed += 1
             p = self.root / 'glossary' / f'{game_id}.json'
-            p.write_text(json.dumps(sorted(current.values(), key=lambda t: t['en'].lower()),
-                                    ensure_ascii=False, indent=1), encoding='utf-8')
+            tmp = p.with_suffix('.tmp')  # write aside then swap: a write cut short never leaves a broken glossary
+            tmp.write_text(json.dumps(sorted(current.values(), key=lambda t: t['en'].lower()),
+                                      ensure_ascii=False, indent=1), encoding='utf-8')
+            os.replace(tmp, p)
             return changed
 
     def teach(self, game_id, text):

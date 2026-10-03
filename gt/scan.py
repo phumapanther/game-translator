@@ -125,6 +125,8 @@ def scan(game_dir, manual_locres=None, ignore_mod=False):
         en = e.text if base_entries else ('' if mod_text else e.text)
         lines.append(Line(n, e.ns, e.key, en, mod_text, '' if mod_text else skip_reason(e.ns, en)))
 
+    if not fonts and mode != 'mod':  # e.g. encrypted pak index: no font to replace with Sarabun
+        notes.append('ไม่พบไฟล์ฟอนต์ของเกม — ติดตั้งแล้วตัวอักษรไทยอาจขึ้นเป็นกล่องสี่เหลี่ยม')
     signed = any(paks_dir.glob('*.sig'))
     if signed:
         has_asi = any((paks_dir.parent.parent / 'Binaries' / 'Win64').glob('*.asi'))

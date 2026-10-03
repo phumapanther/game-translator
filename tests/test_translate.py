@@ -107,6 +107,15 @@ def test_connection_error_is_thai():
         assert 'อินเทอร์เน็ต' in str(e)
 
 
+def test_network_drop_mid_stream_is_thai():
+    t = _tr('t8c', FakeClient(lambda p, kw: httpx.RemoteProtocolError('peer closed connection')))
+    try:
+        t.run(ITEMS[:3])
+        assert False, 'must raise'
+    except TranslateError as e:
+        assert 'อินเทอร์เน็ต' in str(e)
+
+
 def test_stop_event_halts_before_next_batch():
     stop = threading.Event()
     stop.set()
@@ -127,6 +136,18 @@ def test_stale_done_rows_are_retranslated_when_english_changed():
     out = _tr('t11', c).run(ITEMS[:1])
     assert out[1]['th'] == thaiify(ITEMS[0]['en']) and len(c.calls) == 1
     assert load_done(work)[1]['en'] == ITEMS[0]['en']
+
+
+def test_result_only_holds_rows_for_the_current_lines():
+    """A stale row whose retranslation failed, or a row for a line the update removed, must not come back."""
+    work = tmp_path('t13-work')
+    work.mkdir(parents=True)
+    rows = [{'n': 1, 'th': 'เก่า', 'type': 'ui', 'en': 'Text before the game update'},
+            {'n': 999, 'th': 'หาย', 'type': 'ui', 'en': 'A line the update removed'}]
+    (work / 'done.jsonl').write_text(''.join(json.dumps(r, ensure_ascii=False) + '\n' for r in rows), encoding='utf-8')
+    broken = FakeClient(lambda p, kw: message({'items': [{'id': r['id'], 'th': 'พัง', 'type': 'ui'}
+                                                         for r in p.get('items') or p.get('fix')]}))
+    assert _tr('t13', broken).run(ITEMS[:1]) == {}
 
 
 def test_truncated_done_file_is_tolerated():
