@@ -8,8 +8,9 @@ def build_lines(scan, results, tm_hits):
     """results: {n: {'th','type'}} from Claude; tm_hits: {n: th} -> one dict per locres line, in file order."""
     out = []
     for line in scan.lines:
-        if line.n in results:
-            th, typ, status = results[line.n]['th'], results[line.n]['type'], 'claude'
+        r = results.get(line.n)
+        if r and r.get('en') in (None, line.en):  # a result saved for different English is stale: ignore it
+            th, typ, status = r['th'], r['type'], 'claude'
         elif line.n in tm_hits:
             th, typ, status = tm_hits[line.n], 'other', 'tm'
         elif line.mod_text:

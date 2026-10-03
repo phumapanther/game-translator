@@ -83,13 +83,16 @@ def split_tm(scan, memory):
 
 
 def load_done(work_dir):
+    """-> {n: {'th','type','en'}}. A half-written last line (app closed mid-write) is skipped, not fatal."""
     p = Path(work_dir) / 'done.jsonl'
     out = {}
     if p.exists():
         for line in p.read_text(encoding='utf-8').splitlines():
-            if line.strip():
+            try:
                 r = json.loads(line)
-                out[r['n']] = {'th': r['th'], 'type': r['type']}
+            except ValueError:
+                continue
+            out[r['n']] = {'th': r['th'], 'type': r['type'], 'en': r.get('en')}
     return out
 
 
@@ -114,7 +117,8 @@ class Translator:
         """items: [{'id': n, 'en': str}]. stop: threading.Event. progress(finished, total, cost_usd)."""
         stop = stop or threading.Event()
         done = self.done()
-        todo = [it for it in items if it['id'] not in done]
+        # a saved row only counts if its English still matches (the game may have been updated since)
+        todo = [it for it in items if it['id'] not in done or done[it['id']]['en'] not in (None, it['en'])]
         total, finished = len(items), len(items) - len(todo)
         system = self.memory.system_prompt(self.game_id, self.game_name)
         glossary = self.memory.glossary(self.game_id)
@@ -189,7 +193,7 @@ class Translator:
         for n, it in by_id.items():
             r = got.get(n)
             if r and is_ok(it['en'], r['th'], glossary):
-                out[n] = {'th': r['th'], 'type': r['type']}
+                out[n] = {'th': r['th'], 'type': r['type'], 'en': it['en']}
                 left = problems(it['en'], r['th'], glossary)
             else:
                 left = problems(it['en'], r['th'], glossary) if r else [('hard', 'missing')]
@@ -238,4 +242,4 @@ class Translator:
     def _save(self, res):
         with self._lock, open(self.work_dir / 'done.jsonl', 'a', encoding='utf-8') as f:
             for n, r in res.items():
-                f.write(json.dumps({'n': n, 'th': r['th'], 'type': r['type']}, ensure_ascii=False) + '\n')
+                f.write(json.dumps({'n': n, 'th': r['th'], 'type': r['type'], 'en': r['en']}, ensure_ascii=False) + '\n')

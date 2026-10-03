@@ -47,6 +47,13 @@ def test_maneater_end_to_end_with_fake_claude():
     assert data['lines'][first - 1]['n'] == first
 
 
+def test_build_lines_ignores_results_for_a_different_english():
+    s = _maneater_base()
+    line = s.todo()[0]
+    lines = build_lines(s, {line.n: {'th': 'ผิดบรรทัด', 'type': 'ui', 'en': 'something else'}}, {})
+    assert lines[line.n - 1]['status'] == 'english' and lines[line.n - 1]['th'] == line.en
+
+
 def test_install_twice_backs_up():
     s = _maneater_base()
     lines = build_lines(s, {}, {})

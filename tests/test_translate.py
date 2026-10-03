@@ -1,9 +1,10 @@
+import json
 import threading
 
 import anthropic
 
 from gt.memory import Memory
-from gt.translate import TranslateError, Translator, estimate_usd, make_batches
+from gt.translate import TranslateError, Translator, estimate_usd, load_done, make_batches
 from tests.fake_claude import FakeClient, message, thaiify
 from tests.paths import tmp_path
 
@@ -115,6 +116,25 @@ def test_stop_event_halts_before_next_batch():
 
 def test_estimate_scales_with_model():
     assert estimate_usd(ITEMS, 'claude-fable-5-1', 20000) > estimate_usd(ITEMS, 'claude-haiku-4-5', 20000) > 0
+
+
+def test_stale_done_rows_are_retranslated_when_english_changed():
+    work = tmp_path('t11-work')
+    work.mkdir(parents=True)
+    old = {'n': 1, 'th': 'เก่า', 'type': 'ui', 'en': 'Text before the game update'}
+    (work / 'done.jsonl').write_text(json.dumps(old, ensure_ascii=False) + '\n', encoding='utf-8')
+    c = FakeClient()
+    out = _tr('t11', c).run(ITEMS[:1])
+    assert out[1]['th'] == thaiify(ITEMS[0]['en']) and len(c.calls) == 1
+    assert load_done(work)[1]['en'] == ITEMS[0]['en']
+
+
+def test_truncated_done_file_is_tolerated():
+    work = tmp_path('t12-work')
+    work.mkdir(parents=True)
+    good = json.dumps({'n': 1, 'th': 'ดี', 'type': 'ui', 'en': 'x'}, ensure_ascii=False)
+    (work / 'done.jsonl').write_text(good + '\n{"n": 2, "th": "ครึ', encoding='utf-8')
+    assert load_done(work) == {1: {'th': 'ดี', 'type': 'ui', 'en': 'x'}}
 
 
 def test_propose_lessons_returns_items():

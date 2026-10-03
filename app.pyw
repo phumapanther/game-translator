@@ -34,6 +34,7 @@ class App:
         self.teachings = []
         self.last_translator = None
         self.stop = threading.Event()
+        self.busy = threading.Event()
         s = self._load_settings()
 
         f = ttk.Frame(root, padding=10)
@@ -125,6 +126,12 @@ class App:
         self.root.after(100, self._poll)
 
     def _bg(self, fn):
+        """Run fn in a worker thread. Only one job at a time - a second click must never bill twice."""
+        if self.busy.is_set():
+            self.log('⏳ มีงานกำลังทำอยู่ — รอให้เสร็จก่อน (หรือกด "หยุด")')
+            return False
+        self.busy.set()
+
         def run():
             try:
                 fn()
@@ -132,7 +139,10 @@ class App:
                 self.q.put(('error', str(e)))
             except Exception as e:  # last resort: never die silently in a worker thread
                 self.q.put(('error', f'เกิดข้อผิดพลาดที่ไม่คาดคิด: {e!r}'))
+            finally:
+                self.busy.clear()
         threading.Thread(target=run, daemon=True).start()
+        return True
 
     def _load_settings(self):
         try:

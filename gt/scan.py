@@ -76,13 +76,18 @@ def scan(game_dir, manual_locres=None, ignore_mod=False):
     base_paks = [p for p in paks if not p.stem.endswith('_P')]
     if not base_paks:
         raise ScanError('ไม่พบไฟล์ pak หลักของเกมในโฟลเดอร์ Content/Paks')
-    base_pak = max(base_paks, key=lambda p: p.stat().st_size)
-    try:
-        base = Pak(base_pak)
-    except PakError as e:
-        raise ScanError(f'อ่านไฟล์ {base_pak.name} ไม่ได้: {e}')
-    notes = []
-    fonts = [_rel(n) for n in base.names() if _is_font(_rel(n))]
+    base_paks.sort(key=lambda p: p.stat().st_size, reverse=True)
+    base_pak = base_paks[0]
+    notes, fonts, readable = [], [], []
+    for p in base_paks:  # chunked games (pakchunk0/1/...) spread text and fonts over several paks
+        try:
+            pak = Pak(p)
+        except PakError as e:  # e.g. AES-encrypted index: names unknown, the manual Game.locres path still works
+            notes.append(f'อ่านไฟล์ {p.name} ไม่ได้: {e}')
+            continue
+        readable.append(pak)
+        fonts += [_rel(n) for n in pak.names() if _is_font(_rel(n))]
+    fonts = list(dict.fromkeys(fonts))
 
     base_version, base_entries, mode = None, None, None
     if manual_locres:
@@ -92,12 +97,14 @@ def scan(game_dir, manual_locres=None, ignore_mod=False):
             raise ScanError(f'อ่านไฟล์ locres ที่เลือกไม่ได้: {e}')
         mode = 'manual'
     else:
-        name = _find(base, rel_locres)
-        if name is None:
+        holder = next(((pak, name) for pak in readable for name in [_find(pak, rel_locres)] if name), None)
+        if holder is None:
             notes.append('ไม่พบ Game.locres ภาษาอังกฤษใน pak หลัก')
         else:
+            pak, name = holder
+            base_pak = Path(pak.path)
             try:
-                base_version, base_entries = locres.read(base.read(name))
+                base_version, base_entries = locres.read(pak.read(name))
                 mode = 'base'
             except (PakError, locres.LocresError) as e:
                 notes.append(f'แตกข้อความอังกฤษจาก pak หลักไม่ได้ ({e})')
