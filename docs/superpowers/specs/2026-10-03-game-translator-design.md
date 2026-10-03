@@ -35,7 +35,7 @@
    งานบันทึกทีละชุดลง `work/<game>/` ถ้าปิดแล้วเปิดใหม่จะทำต่อจากชุดที่ค้างโดยไม่เสียเงินซ้ำ
 4. **ติดตั้ง:** สร้าง pak ที่มี `Game.locres` และฟอนต์ไทย
    - ชื่อไฟล์: ถ้าต่อยอดม็อดให้ใช้ชื่อไฟล์ม็อดเดิม ถ้าไม่ใช่ให้ตั้งเป็น `<ชื่อโฟลเดอร์โปรเจกต์เกม>_Thai_P.pak`
-   - ฟอนต์: ถ้าต่อยอดม็อดให้ใช้ฟอนต์ในม็อดนั้น ถ้าไม่ใช่ ให้ทับทุก `*.ufont` และ `Engine/Content/Slate/Fonts/*.ttf` ที่อยู่ในรายชื่อไฟล์ของ pak หลักด้วย NotoSansThai (ชื่อที่มี Bold/Black/SemiBold ใช้ตัวหนา ที่เหลือใช้ตัวธรรมดา) ตามแบบม็อด JIM
+   - ฟอนต์: ถ้าต่อยอดม็อดให้ใช้ฟอนต์ในม็อดนั้น ถ้าไม่ใช่ ให้ทับทุก `*.ufont` และ `Engine/Content/Slate/Fonts/*.ttf` ที่อยู่ในรายชื่อไฟล์ของ pak หลักด้วย **Sarabun** (OFL มีทั้งไทยและละติน — NotoSansThai ไม่มีตัวอักษรละติน ใช้ไม่ได้) ชื่อที่มี Bold/Black/Heavy ใช้ Sarabun-Bold ที่เหลือใช้ Sarabun-Regular ตามแบบม็อด JIM
    - สำรองไฟล์ที่จะถูกทับไว้ใน `work/<game>/backup/` ก่อน แล้วคัดลอกลง `Content/Paks`
 5. **สอนเพิ่ม (กล่องข้อความ):** ผู้ใช้พิมพ์คำแนะนำ เช่น "Infamy = ค่าหัว" → บันทึกเข้าอภิธานศัพท์ของเกมหรือ `style_th.md` ทันที
 6. **จบเกม → สรุปบทเรียน:** Claude เสนอบทเรียนใหม่ 3–10 ข้อ แสดงเป็นรายการติ๊กเลือก ข้อที่ผู้ใช้ติ๊กเท่านั้นจึงจะถูกบันทึก
@@ -54,7 +54,7 @@ game-translator/
     memory.py        โหลด/บันทึก style, lessons, glossary, TM; สรุปบทเรียน
     book.py          เขียนไฟล์หนังสือ (สัญญาข้อมูลกับชั้นหนังสือ)
     install.py       สร้าง pak (locres + ฟอนต์), สำรองไฟล์, ติดตั้ง
-  fonts/             NotoSansThai Regular/Bold (OFL) + OFL.txt
+  fonts/             Sarabun-Regular.ttf, Sarabun-Bold.ttf (OFL) + OFL.txt
   memory/            style_th.md, lessons.md, glossary/<game>.json, tm.jsonl
   books/<game>.json
   work/<game>/       ชุดงานที่แปลแล้ว, backup/
@@ -70,7 +70,7 @@ game-translator/
 scan  → รายการ {n, ns, key, en, th_เดิม?}
       → กฎข้าม + ดึงจาก TM (ตรงเป๊ะ)          → ที่เหลือคือ "ต้องแปล"
 translate (ชุดละ ~150 ข้อความ / ~12k ตัวอักษร, พร้อมกัน 4 ชุด)
-      → system = style_th + lessons + glossary ของเกม   (cache_control: ephemeral)
+      → system = style_th + lessons + glossary ทั้งเกม   (cache_control: ephemeral; ชุดแรกรันเดี่ยวเพื่อเขียน cache ก่อนรันขนาน)
       → user   = JSON [{id, en, ns}]
       → ผลลัพธ์ structured output {items:[{id, th, type}]}
       → validate → ข้อที่ไม่ผ่านส่งแก้ 1 รอบพร้อมบอกจุดผิด → ยังไม่ผ่าน = คงอังกฤษ + รายงาน
@@ -93,10 +93,13 @@ install → locres ใหม่ (คง hash เดิมทุกตัว) + �
 |---|---|---|
 | `memory/style_th.md` | กฎสไตล์ไทย: เว้นวรรคทุก ~25–35 ตัวอักษร, ห้ามแตะแท็ก/ตัวแปร/`\r\n`, น้ำเสียงตามประเภทตัวละคร, ไม่แปลรายชื่อเครดิต, ตัวพิมพ์ใหญ่ทั้งหมด → ไทยปกติ | BRIEF.md ของ Maneater + ม็อด JIM |
 | `memory/lessons.md` | บทเรียนเทคนิค: locres/pak, ฟอนต์, `.sig`, Oodle, ตำแหน่งไฟล์ | memory `game-thai-translation-lessons` |
-| `memory/glossary/<game>.json` | `{en: th}` ของเกมนั้น | คำสั้น (≤40 ตัวอักษร) จากม็อดเดิม + คำที่ผู้ใช้สอน |
+| `memory/glossary/<game>.json` | รายการ `{en, th, category, tone, note, dnt}` ของเกมนั้น (โครงแบบ Weblate ฉบับย่อ) | คำสั้น (≤40 ตัวอักษร) จากม็อดเดิม + คำที่ผู้ใช้สอน + คำสั้นที่ Claude แปลใหม่ |
 | `memory/tm.jsonl` | `{en, th, game, model, date}` ทุกข้อความที่ผ่านตัวตรวจ | Maneater 2026-10-03 (~6,300 คู่) |
 
-- ส่ง glossary ไปเฉพาะคำที่ปรากฏในชุดนั้น (เทียบข้อความแบบไม่สนตัวพิมพ์ใหญ่-เล็ก) ถ้ามีมากเกิน 300 คำให้ส่งแค่ 300 คำแรก
+- ฟิลด์ของอภิธานศัพท์: `category` ∈ character, location, item, skill, creature, ui, other · `tone` = น้ำเสียง/สรรพนามของตัวละคร (ข้อความอิสระ) · `note` = บริบท · `dnt` = ห้ามแปล (คงอังกฤษ)
+- ส่งอภิธานศัพท์ทั้งเกม (สูงสุด 1,500 คำ) ไว้ใน system prompt ที่ cache แล้ว ไม่กรองเป็นรายชุด เพราะ cache read ราคาถูกมาก
+- ตัวตรวจแบบเตือน (soft): คำในอภิธานศัพท์ (ยาว ≥3 ตัวอักษร, ไม่ใช่หมวด other) ที่ปรากฏในข้อความอังกฤษ ต้องมีคำไทยที่กำหนดอยู่ในคำแปล (หรือคงอังกฤษถ้า `dnt`) ถ้าไม่มี ให้ส่งแก้พร้อมระบุคำ
+- ไม่ทำรอบนี้ (จดใน lessons.md): zero-width space + PyThaiNLP เพื่อตัดบรรทัด (ต้องทดสอบในเกมก่อน), เครื่องมือเอนจินอื่น (XUnity.AutoTranslator, AssetStudio, Translator++, Ren'Py)
 - สรุปบทเรียน: ส่งรายการปัญหาที่ตัวตรวจเจอ + สิ่งที่ผู้ใช้สอน + ตัวอย่างคำแปล 40 คู่ แล้วขอบทเรียน 3–10 ข้อแบบ structured output → ผู้ใช้ติ๊กเลือก → ต่อท้าย `lessons.md` หรือ `style_th.md` พร้อมระบุวันที่และชื่อเกม
 
 ## 7. ไฟล์หนังสือ (สัญญาข้อมูลกับโปรเจกต์ย่อย 2)
