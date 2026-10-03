@@ -1,0 +1,24 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "เปิดโปรแกรมแปลเกม",
+      "type": "shell",
+      "command": "python app.pyw",
+      "problemMatcher": []
+    },
+    {
+      "label": "รันเทสต์ทั้งหมด",
+      "type": "shell",
+      "command": "python tests/run.py",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "สร้างความจำเริ่มต้นใหม่",
+      "type": "shell",
+      "command": "python tools/seed_memory.py --force",
+      "problemMatcher": []
+    }
+  ]
+}
