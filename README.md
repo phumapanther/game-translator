@@ -18,3 +18,10 @@
 
 ## ฟอนต์
 Sarabun © Cadson Demak — SIL Open Font License (fonts/OFL.txt)
+
+## License / สัญญาอนุญาต
+
+- **โค้ด / Code:** [PolyForm Noncommercial 1.0.0](LICENSE) — ใช้ ศึกษา แก้ไขได้ แต่**ห้ามขายหรือใช้เชิงพาณิชย์**
+- **เสียง รูปภาพ วิดีโอ โมเดล / Media assets:** All Rights Reserved — **ห้ามดัดแปลง แก้ไข ขายต่อ หรือเผยแพร่** โดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร
+
+รายละเอียดเต็มดูที่ [LICENSE](LICENSE)
